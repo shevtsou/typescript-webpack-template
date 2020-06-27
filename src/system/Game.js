@@ -1,10 +1,13 @@
 import attachOnClick from '../hidden/attachMouseHandler'
 import Piece from '../models/Piece'
 import Inker from '../models/Inker'
-
+import Marker from '../system/Marker'
 
 class Game {
 
+    /** @type {Array<Marker>} */
+    markers = []
+ 
     /** @type {Array<Inker>} */
     INKERS = []
 
@@ -28,6 +31,15 @@ class Game {
         this.INKERS.push(inker)
     }
     
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {string} color
+     */
+    addMarker = (x, y, color) => {
+        this.markers.push(new Marker(x, y, color))
+    }
+
     updateGameArea = () => {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
         /** @type {Piece[]} */
@@ -39,6 +51,9 @@ class Game {
         }, []);
         pieces.forEach(c => {
             this.drawCircle(c.x, c.y, c.size, c.color);
+        })
+        this.markers.forEach(m => {
+            this.drawCircle(m.x, m.y, 5, m.color)
         })
     }
     
@@ -54,6 +69,12 @@ class Game {
         // context.fillStyle = color;
         // context.fill();
         this.context.strokeStyle = color;
+        this.context.stroke();
+    }
+
+    drawRectangle = (x0, y0, x1, y1) => {
+        this.context.beginPath();
+        this.context.rect(x0,y0, x1 - x0, y1 - y0);
         this.context.stroke();
     }
     

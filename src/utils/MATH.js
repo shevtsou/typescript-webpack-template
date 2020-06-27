@@ -24,12 +24,14 @@ function getCircleIntercectPoints(circle1, circle2) {
 
   const targetX1 = PX - (h / d) * (piece2.y - piece1.y);
   const targetY1 = PY + (h / d) * (piece2.x - piece1.x);
-  if (targetX0 !== NaN && targetY0 !== NaN) {
+  if (!isNaN(targetX0) && !isNaN(targetY0)) {
     mergePoints.push({ x: targetX0, y: targetY0 });
   }
-  if (targetX1 !== NaN && targetY1 !== NaN) {
+  if (!isNaN(targetX1) && !isNaN(targetY1)) {
     mergePoints.push({ x: targetX1, y: targetY1 });
   }
+  console.log(mergePoints);
+
   return mergePoints;
 }
 

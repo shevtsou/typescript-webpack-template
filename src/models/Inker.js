@@ -12,6 +12,15 @@ class Inker {
     /** @type {Array<Piece>} */
     pieces = []    
 
+    /** @type {boolean} */
+    cached
+
+    /** @type {Array<Piece>} */
+    lastUpdatedPieces = []
+
+    /** @type {Array<{x: number, y: number}>} */
+    mergeBorderPoints = []
+
     constructor(color, x, y) {
         this.color = color
         this.x = x;
@@ -48,29 +57,45 @@ class Inker {
     }
 
     /**
-     * @return {Array<{x: number, y: number}>}
+     * 
+     * @param {Piece} piece 
+     * @param {{x: number, y: number}} mergePoint
      */
-    getBorderMergePoints() {
-        const points = this.getMergePoints();
-
-
-        return points.filter(p=> {
-            for (const piece of this.pieces) {
-                const pointX = p.x - piece.x;
-                const pointY = p.y - piece.y
-                const hypotenuse = Math.sqrt(pointX * pointX + pointY * pointY)
-                if (hypotenuse > piece.size) {
-                    return true;
-                }
-            }
-            return false;
-        });
+    addPieceToMergePoint(piece, mergePoint) {
+        this.mergeBorderPoints = this.mergeBorderPoints.splice(this.mergeBorderPoints.indexOf(mergePoint), 1)
+        
     }
 
     /**
      * @return {Array<{x: number, y: number}>}
      */
-   getMergePoints() {
+    getBorderMergePoints() {
+        const points = this._getMergePoints();
+
+        if (!this.cached) {
+            const borderpoints =  points.filter(p=> {
+                for (const piece of this.pieces) {
+                    const pointX = p.x - piece.x;
+                    const pointY = p.y - piece.y
+                    const hypotenuse = Math.sqrt(pointX * pointX + pointY * pointY)
+                    if (hypotenuse + 0.1 < piece.size) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+            borderpoints.forEach(mp => {
+                this.mergeBorderPoints.push(mp)
+            })
+            return borderpoints
+        }
+
+    }
+
+    /**
+     * @return {Array<{x: number, y: number}>}
+     */
+   _getMergePoints() {
        const mergePoints = []
        for (let i0 = 0; i0 < this.pieces.length; i0++) {
            for (let i1 =  i0 + 1; i1 < this.pieces.length; i1++) {//to optimize

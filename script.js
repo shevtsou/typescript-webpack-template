@@ -49,26 +49,27 @@ class Inker {
      * @return {Array<{x: number, y: number}>}
      */
     getBorderMergePoints() {
-        const points = this.getMergePoints();
+        const points = this._getMergePoints();
 
-
-        return points.filter(p=> {
+        const borderpoints =  points.filter(p=> {
             for (const piece of this.pieces) {
                 const pointX = p.x - piece.x;
                 const pointY = p.y - piece.y
                 const hypotenuse = Math.sqrt(pointX * pointX + pointY * pointY)
-                if (hypotenuse > piece.size) {
-                    return true;
+                if (hypotenuse + 0.1 < piece.size) {
+                    return false;
                 }
             }
-            return false;
+            return true;
         });
+        return borderpoints
+
     }
 
     /**
      * @return {Array<{x: number, y: number}>}
      */
-   getMergePoints() {
+   _getMergePoints() {
        const mergePoints = []
        for (let i0 = 0; i0 < this.pieces.length; i0++) {
            for (let i1 =  i0 + 1; i1 < this.pieces.length; i1++) {//to optimize
@@ -111,7 +112,22 @@ class Controller {
     points = []
 
 
-    
+    /**
+     * 
+     * @param {Inker} inker 
+     */
+    expand(inker) {
+        const mergePoints = inker.getBorderMergePoints()
+        const targetPoint = mergePoints[Math.floor(Math.random() * mergePoints.length)]
+        inker.pieces.push(new Piece("#000", targetPoint.x, targetPoint.y, 50))
+        
+        const mergePointsDebug = inker.getBorderMergePoints()
+        GAME.clearMarkers();
+        for (const point of mergePointsDebug) {
+            GAME.addMarker(point.x, point.y, "#f00")
+        }
+
+    }
 
     // /**
     //  * @param {Inker} inker
@@ -165,6 +181,10 @@ class Game {
      */
     addMarker = (x, y, color) => {
         this.markers.push(new Marker(x, y, color))
+    }
+
+    clearMarkers = () => {
+        this.markers.length = 0;
     }
 
     updateGameArea = () => {
@@ -252,12 +272,14 @@ function getCircleIntercectPoints(circle1, circle2) {
 
   const targetX1 = PX - (h / d) * (piece2.y - piece1.y);
   const targetY1 = PY + (h / d) * (piece2.x - piece1.x);
-  if (targetX0 !== NaN && targetY0 !== NaN) {
+  if (!isNaN(targetX0) && !isNaN(targetY0)) {
     mergePoints.push({ x: targetX0, y: targetY0 });
   }
-  if (targetX1 !== NaN && targetY1 !== NaN) {
+  if (!isNaN(targetX1) && !isNaN(targetY1)) {
     mergePoints.push({ x: targetX1, y: targetY1 });
   }
+  console.log(mergePoints);
+
   return mergePoints;
 }
 
@@ -298,16 +320,19 @@ let inker = new Inker("#000000", 200, 400)
 inker.pieces.push(new Piece("#000000", 200, 320, 50))
 inker.pieces.push(new Piece("#000000", 235, 320, 50))
 GAME.addInker(inker);
-const mergePoints = inker.getMergePoints()
+setInterval(() => {
+    CONTROLLER.expand(inker)
+}, 50);
+// const mergePoints = inker.getMergePoints()
 
-for (const point of mergePoints) {
-    GAME.addMarker(point.x, point.y, "#f00")
-}
+// for (const point of mergePoints) {
+//     GAME.addMarker(point.x, point.y, "#f00")
+// }
 
-const borderPoints = inker.getBorderMergePoints();
-borderPoints.forEach(bp=> {
-    GAME.addMarker(bp.x, bp.y, "#0000FF")
-})
+// const borderPoints = inker.getBorderMergePoints();
+// borderPoints.forEach(bp=> {
+//     GAME.addMarker(bp.x, bp.y, "#0000FF")
+// })
 // inker.getMergePoints();
 
 // GAME.addInker(new Inker("#000000", 250, 200));

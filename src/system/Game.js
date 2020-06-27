@@ -40,6 +40,10 @@ class Game {
         this.markers.push(new Marker(x, y, color))
     }
 
+    clearMarkers = () => {
+        this.markers.length = 0;
+    }
+
     updateGameArea = () => {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
         /** @type {Piece[]} */

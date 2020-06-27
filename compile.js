@@ -31,7 +31,7 @@ glob("**/*.js", {}, (err, files) => {
         const rawContents = fs.readFileSync(f).toString();
         let contents = "";
         let lines = rawContents.split("\n");
-        if (lines.length > 100) {
+        if (lines.length > 200) {
             console.error(`File ${f} contains too many lines, please split it!`)
             process.exit(1);
         }

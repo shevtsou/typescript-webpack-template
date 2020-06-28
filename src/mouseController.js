@@ -7,15 +7,12 @@
 function attachOnClick(handler, onup) {/** $IGNORE$ */}
 
 
-function addCircle(x, y) {
-    console.log("adding circle");
-}
 
 
 let MOUSE_INTERVAL_ID;
 attachOnClick((x, y) => {
     if (MOUSE_INTERVAL_ID === undefined) {
-        MOUSE_INTERVAL_ID = setInterval(() => {addCircle(x, y)}, 1000)
+        MOUSE_INTERVAL_ID = setInterval(() => {addCircle(x, y)}, 300)
     }
 
 }, () => {

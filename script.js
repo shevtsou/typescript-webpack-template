@@ -1,87 +1,103 @@
 
-class Inker {
-    /** @type {string} color */
-    color
+class Cell {
+    /** @type {Inker?} color */
+    owner
     /** @type {number} x */
     x
     /** @type {number} y */
     y
 
-    /** @type {Array<Piece>} */
-    pieces = []    
+    /** @type {number} */
+    neighborhood = 0
 
-    constructor(color, x, y) {
-        this.color = color
+    /** @type {boolean} */
+    drawn
+    
+    /** @type {boolean} */
+    shifted
+
+    constructor(x, y, shifted) {
         this.x = x;
         this.y = y;
-        this.pieces.push(new Piece(color, x, y, 50))
+        this.shifted = shifted
     }
 
-    /**
-     * @return {{x0: number, x1: number, y0: number, y1: number}}
-     */
-    getProportions() {
-        const proportions = {
-            x0: undefined,
-            x1: undefined,
-            y0: undefined,
-            y1: undefined,
-        }
-        for (const piece of this.pieces) {
-            if (proportions.x0 === undefined || proportions.x0 > piece.x - piece.size) {
-                proportions.x0 = piece.x - piece.size;
-            }
-            if (proportions.x1 === undefined || proportions.x1 < piece.x + piece.size) {
-                proportions.x1 = piece.x + piece.size;
-            }
-            if (proportions.y0 === undefined || proportions.y0 < piece.y + piece.size) {
-                proportions.y0 = piece.y + piece.size;
-            }
-            if (proportions.y1 === undefined|| proportions.y1 > piece.y - piece.size) {
-                proportions.y1 = piece.y - piece.size
-            }
-        }
+}
 
-        return proportions
+
+class Inker {
+    /** @type {string} color */
+    color
+    /** @type {Map<number, Cell>} */
+    cells = new Map();    
+
+    /** @type {Map<number, {x: number, y: number, neightborhood: number}>} */
+    borderCells = new Map(); 
+
+    constructor(color) {
+        this.color = color
     }
 
-    /**
-     * @return {Array<{x: number, y: number}>}
-     */
-    getBorderMergePoints() {
-        const points = this._getMergePoints();
+    /** @param {Cell} cell */
+    addCell(cell) {
+        const newCellHash = this.getCellHash(cell);
+        
 
-        const borderpoints =  points.filter(p=> {
-            for (const piece of this.pieces) {
-                const pointX = p.x - piece.x;
-                const pointY = p.y - piece.y
-                const hypotenuse = Math.sqrt(pointX * pointX + pointY * pointY)
-                if (hypotenuse + 0.1 < piece.size) {
-                    return false;
+        this.cells.set(newCellHash, cell)
+        this.borderCells.delete(newCellHash);
+        for (let xd = -1; xd < 2; xd++) {
+            for (let yd = -1; yd < 2; yd++) {
+                if (xd === 0 || yd === 0) {
+                    if (xd !== 0 || yd !== 0) {
+                        const cellGhost = {x: cell.x + xd, y: cell.y + yd, neightborhood: 0};
+                        const cellHash = this.getCellHash(cellGhost)
+                        if (!this.cells.has(cellHash)) {
+                            if (this.borderCells.has(cellHash)) {
+                                this.borderCells.get(cellHash).neightborhood+=1
+                            } else {
+                                this.borderCells.set(cellHash, cellGhost);
+                            }
+                        }
+                    }
                 }
             }
-            return true;
+        }
+        cell.owner = this;
+        // GAME.borderCells = this.borderCells;//REMOVE THIS
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {Game} game
+     */
+    expandTo(x, y, game) {
+        let cells = Array.from(this.borderCells.values()).sort((c1, c2) => {
+            if (c1.neightborhood === c2.neightborhood) {
+                const score1 = Math.abs(x - c1.x) + Math.abs(y - c1.y)
+                const score2 = Math.abs(x - c2.x) + Math.abs(y - c2.y)
+                return score1 - score2;
+            } else {
+                return c2.neightborhood - c1.neightborhood
+            }
         });
-        return borderpoints
+        cells = cells.slice(0, Math.floor(cells.length / 3));
+        const targetCells = getRandomElement(cells, 5);
+        console.log(targetCells);
+        for (const targetCell of targetCells) {
+            this.addCell(game.field[targetCell.y][targetCell.x])
+        }
 
     }
 
     /**
-     * @return {Array<{x: number, y: number}>}
+     * @param {{x: number, y: number}} cell
+     * @returns {number} hash
      */
-   _getMergePoints() {
-       const mergePoints = []
-       for (let i0 = 0; i0 < this.pieces.length; i0++) {
-           for (let i1 =  i0 + 1; i1 < this.pieces.length; i1++) {//to optimize
-                const piece1 = this.pieces[i0];
-                const piece2 = this.pieces[i1];
-                getCircleIntercectPoints(piece1, piece2).forEach(p=> {
-                    mergePoints.push(p)
-                });
-           }
-       }
-    return mergePoints;
-   }
+    getCellHash(cell) {
+        return cell.x * 10000 + cell.y;
+    }
+
 
 }
 
@@ -119,7 +135,7 @@ class Controller {
     expand(inker) {
         const mergePoints = inker.getBorderMergePoints()
         const targetPoint = mergePoints[Math.floor(Math.random() * mergePoints.length)]
-        inker.pieces.push(new Piece("#000", targetPoint.x, targetPoint.y, 50))
+        inker.addPiece(new Piece("#000", targetPoint.x, targetPoint.y, 50))
         
         const mergePointsDebug = inker.getBorderMergePoints()
         GAME.clearMarkers();
@@ -146,7 +162,16 @@ class Controller {
 
 
 
+const CELL_CIRCLE_SIZE = 25;
+const CELL_FREE_SIZE = 40;
+
 class Game {
+
+    
+    /**
+     * @type {Array<Array<Cell>>}
+     */
+    field = []
 
     /** @type {Array<Marker>} */
     markers = []
@@ -159,14 +184,47 @@ class Game {
     /** @type {CanvasRenderingContext2D} */
     context
 
+    /** @type {ImageData} */
+    canvasData
+
     constructor() {
+        for (let y = 0; y < 30; y++) {
+            const row = []
+            for (let x = 0; x < 30; x++) {
+                row.push(new Cell(x, y, y % 2 === 0));
+            }
+            this.field.push(row)
+        }
+
         //@ts-ignore
         this.canvas = document.getElementById("myCanvas");
         //@ts-ignore
         this.context = this.canvas.getContext("2d");
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-        setInterval(this.updateGameArea, 20);
+        this.canvasData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        setInterval(this.updateGameArea, 50);
+    }
+
+    /**
+     * 
+     * @param {number} mouseX 
+     * @param {number} mouseY 
+     * @returns {{x: number, y: number}}
+     */
+    mapToCellCoordinates(mouseX, mouseY) {
+        return {
+            x: Math.floor(mouseX / CELL_FREE_SIZE),
+            y: Math.floor(mouseY / CELL_FREE_SIZE)
+        }
+    }
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     */
+    getCell(x, y) {
+        return this.field[y][x]
     }
 
     /** @param {Inker} inker */
@@ -189,19 +247,29 @@ class Game {
 
     updateGameArea = () => {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
-        /** @type {Piece[]} */
-        const pieces = this.INKERS.reduce((array, inker) => {
-            inker.pieces.forEach(p => {
-                array.push(p)
+        this.field.forEach(r=> r.forEach(c=> {
+                if (c.owner !== undefined) {
+                    if (c.shifted) {
+                        this.drawCircle(c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, c.owner.color)
+                    } else {
+                        this.drawCircle(c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, c.owner.color)
+                    }
+                }
+        }))
+
+
+        if (this.borderCells) {//REMOVE
+            this.borderCells.forEach(c => {
+                if (y % 2 === 0) {
+                    this.drawCircle(c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, "#f00")
+                    this.context.fillText(c.neightborhood ? c.neightborhood : "-", c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE);
+                } else {
+                    this.drawCircle(c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, "#f00")
+                    this.context.fillText(c.neightborhood ? c.neightborhood : "-", c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE);
+                }
             })
-            return array;
-        }, []);
-        pieces.forEach(c => {
-            this.drawCircle(c.x, c.y, c.size, c.color);
-        })
-        this.markers.forEach(m => {
-            this.drawCircle(m.x, m.y, 5, m.color)
-        })
+        }
+    
     }
     
     /**
@@ -213,18 +281,28 @@ class Game {
     drawCircle = (centerX, centerY, radius, color) => {
         this.context.beginPath();
         this.context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
-        // context.fillStyle = color;
-        // context.fill();
-        this.context.strokeStyle = color;
-        this.context.stroke();
+        this.context.fillStyle = color;
+        this.context.fill();
+        // this.context.strokeStyle = color;
+        // this.context.stroke();
     }
 
-    drawRectangle = (x0, y0, x1, y1) => {
+    drawRectangle = (x0, y0, x1, y1, color = "#f00") => {
         this.context.beginPath();
-        this.context.rect(x0,y0, x1 - x0, y1 - y0);
+        this.strokeStyle = color;
+        this.context.rect(x0,y0, 1, 1);
         this.context.stroke();
     }
     
+    drawPixel = (x, y, r, g, b) => {
+        console.log('drawing')
+        var index = (x + y * this.canvas.width) * 4;
+
+        this.canvasData.data[index + 0] = r;
+        this.canvasData.data[index + 1] = g;
+        this.canvasData.data[index + 2] = b;
+        this.canvasData.data[index + 3] = 255;
+    }
 }
 
 
@@ -244,6 +322,26 @@ class Marker {
         this.color = color
     }
 
+}
+
+/** 
+ * @template O
+ * @param {Array<O>} elements
+ * @param {number} amount
+ * @returns O
+*/
+function getRandomElement(elements, amount = 1) {
+    const result = []
+
+    let element = elements[Math.floor(Math.random() * elements.length)]
+    result.push(element);
+    let remaining = elements.filter(e=>e !== element);
+    while (remaining.length > 0 && result.length < amount) {
+        element = remaining[Math.floor(Math.random() * remaining.length)]
+        result.push(element);
+        remaining = elements.filter(e=>e !== element);
+    }
+    return result;
 }
 
 /**
@@ -314,15 +412,33 @@ function attachOnClick(handler, onup) {
 
 
 const GAME = new Game();
-const CONTROLLER = new Controller();
+// const CONTROLLER = new Controller();
 
-let inker = new Inker("#000000", 200, 400)
-inker.pieces.push(new Piece("#000000", 200, 320, 50))
-inker.pieces.push(new Piece("#000000", 235, 320, 50))
+let inker = new Inker("#000000")
+// inker.pieces.push(new Piece("#000000", 200, 320, 50))
+// inker.pieces.push(new Piece("#000000", 235, 320, 50))
 GAME.addInker(inker);
+inker.addCell(GAME.getCell(10, 10))
+inker.addCell(GAME.getCell(9, 10))
+
+console.log(GAME.mapToCellCoordinates(100, 100));
+
+
+let x, y
+document.addEventListener('mousedown', (e) => {
+    x = e.clientX
+    y = e.clientY
+    console.log(x, y)
+});
+
 setInterval(() => {
-    CONTROLLER.expand(inker)
-}, 50);
+    const coordinateObject = GAME.mapToCellCoordinates(x, y);
+    inker.expandTo(coordinateObject.x, coordinateObject.y, GAME)
+}, 500)
+
+// setInterval(() => {
+//     CONTROLLER.expand(inker)
+// }, 50);
 // const mergePoints = inker.getMergePoints()
 
 // for (const point of mergePoints) {
@@ -345,15 +461,12 @@ setInterval(() => {
  */
 
 
-function addCircle(x, y) {
-    console.log("adding circle");
-}
 
 
 let MOUSE_INTERVAL_ID;
 attachOnClick((x, y) => {
     if (MOUSE_INTERVAL_ID === undefined) {
-        MOUSE_INTERVAL_ID = setInterval(() => {addCircle(x, y)}, 1000)
+        MOUSE_INTERVAL_ID = setInterval(() => {addCircle(x, y)}, 300)
     }
 
 }, () => {

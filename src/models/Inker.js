@@ -1,113 +1,80 @@
-import Piece from './Piece'
+import Cell from './Cell'
 import { getCircleIntercectPoints } from '../utils/MATH'
+import Game from '../system/Game';
 
 class Inker {
     /** @type {string} color */
     color
-    /** @type {number} x */
-    x
-    /** @type {number} y */
-    y
+    /** @type {Map<number, Cell>} */
+    cells = new Map();    
 
-    /** @type {Array<Piece>} */
-    pieces = []    
+    /** @type {Map<number, {x: number, y: number, neightborhood: number}>} */
+    borderCells = new Map(); 
 
-    /** @type {boolean} */
-    cached
-
-    /** @type {Array<Piece>} */
-    lastUpdatedPieces = []
-
-    /** @type {Array<{x: number, y: number}>} */
-    mergeBorderPoints = []
-
-    constructor(color, x, y) {
+    constructor(color) {
         this.color = color
-        this.x = x;
-        this.y = y;
-        this.pieces.push(new Piece(color, x, y, 50))
     }
 
-    /**
-     * @return {{x0: number, x1: number, y0: number, y1: number}}
-     */
-    getProportions() {
-        const proportions = {
-            x0: undefined,
-            x1: undefined,
-            y0: undefined,
-            y1: undefined,
-        }
-        for (const piece of this.pieces) {
-            if (proportions.x0 === undefined || proportions.x0 > piece.x - piece.size) {
-                proportions.x0 = piece.x - piece.size;
-            }
-            if (proportions.x1 === undefined || proportions.x1 < piece.x + piece.size) {
-                proportions.x1 = piece.x + piece.size;
-            }
-            if (proportions.y0 === undefined || proportions.y0 < piece.y + piece.size) {
-                proportions.y0 = piece.y + piece.size;
-            }
-            if (proportions.y1 === undefined|| proportions.y1 > piece.y - piece.size) {
-                proportions.y1 = piece.y - piece.size
-            }
-        }
-
-        return proportions
-    }
-
-    /**
-     * 
-     * @param {Piece} piece 
-     * @param {{x: number, y: number}} mergePoint
-     */
-    addPieceToMergePoint(piece, mergePoint) {
-        this.mergeBorderPoints = this.mergeBorderPoints.splice(this.mergeBorderPoints.indexOf(mergePoint), 1)
+    /** @param {Cell} cell */
+    addCell(cell) {
+        const newCellHash = this.getCellHash(cell);
         
-    }
 
-    /**
-     * @return {Array<{x: number, y: number}>}
-     */
-    getBorderMergePoints() {
-        const points = this._getMergePoints();
-
-        if (!this.cached) {
-            const borderpoints =  points.filter(p=> {
-                for (const piece of this.pieces) {
-                    const pointX = p.x - piece.x;
-                    const pointY = p.y - piece.y
-                    const hypotenuse = Math.sqrt(pointX * pointX + pointY * pointY)
-                    if (hypotenuse + 0.1 < piece.size) {
-                        return false;
+        this.cells.set(newCellHash, cell)
+        this.borderCells.delete(newCellHash);
+        for (let xd = -1; xd < 2; xd++) {
+            for (let yd = -1; yd < 2; yd++) {
+                if (xd === 0 || yd === 0) {
+                    if (xd !== 0 || yd !== 0) {
+                        const cellGhost = {x: cell.x + xd, y: cell.y + yd, neightborhood: 0};
+                        const cellHash = this.getCellHash(cellGhost)
+                        if (!this.cells.has(cellHash)) {
+                            if (this.borderCells.has(cellHash)) {
+                                this.borderCells.get(cellHash).neightborhood+=1
+                            } else {
+                                this.borderCells.set(cellHash, cellGhost);
+                            }
+                        }
                     }
                 }
-                return true;
-            });
-            borderpoints.forEach(mp => {
-                this.mergeBorderPoints.push(mp)
-            })
-            return borderpoints
+            }
+        }
+        cell.owner = this;
+        // GAME.borderCells = this.borderCells;//REMOVE THIS
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {Game} game
+     */
+    expandTo(x, y, game) {
+        let cells = Array.from(this.borderCells.values()).sort((c1, c2) => {
+            if (c1.neightborhood === c2.neightborhood) {
+                const score1 = Math.abs(x - c1.x) + Math.abs(y - c1.y)
+                const score2 = Math.abs(x - c2.x) + Math.abs(y - c2.y)
+                return score1 - score2;
+            } else {
+                return c2.neightborhood - c1.neightborhood
+            }
+        });
+        cells = cells.slice(0, Math.floor(cells.length / 3));
+        const targetCells = getRandomElement(cells, 5);
+        console.log(targetCells);
+        for (const targetCell of targetCells) {
+            this.addCell(game.field[targetCell.y][targetCell.x])
         }
 
     }
 
     /**
-     * @return {Array<{x: number, y: number}>}
+     * @param {{x: number, y: number}} cell
+     * @returns {number} hash
      */
-   _getMergePoints() {
-       const mergePoints = []
-       for (let i0 = 0; i0 < this.pieces.length; i0++) {
-           for (let i1 =  i0 + 1; i1 < this.pieces.length; i1++) {//to optimize
-                const piece1 = this.pieces[i0];
-                const piece2 = this.pieces[i1];
-                getCircleIntercectPoints(piece1, piece2).forEach(p=> {
-                    mergePoints.push(p)
-                });
-           }
-       }
-    return mergePoints;
-   }
+    getCellHash(cell) {
+        return cell.x * 10000 + cell.y;
+    }
+
 
 }
 

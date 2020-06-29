@@ -7,7 +7,7 @@ export class Cell {
     y: number
     neighborhood:number = 0;
     shifted: boolean
-    growing: number = 0.5
+    growing: number = 0
 
     constructor(x: number, y: number, shifted: boolean) {
         this.x = x;

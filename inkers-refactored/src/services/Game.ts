@@ -2,14 +2,14 @@ import { Cell } from '../models/Cell'
 import { Inker } from '../models/Inker'
 import Point from '../models/Point';
 
-const CELL_CIRCLE_SIZE = 25;
-const CELL_FREE_SIZE = 40;
+const CELL_CIRCLE_SIZE = 30;
+const CELL_FREE_SIZE = CELL_CIRCLE_SIZE * 40/25;
 
 class Game {
 
     field: Array<Array<Cell>> = []
 
-    INKERS: Inker[] = []
+    inkers: Inker[] = []
 
     canvas: HTMLCanvasElement
     context: CanvasRenderingContext2D
@@ -43,7 +43,7 @@ class Game {
     }
 
     addInker = (inker: Inker) => {
-        this.INKERS.push(inker)
+        this.inkers.push(inker)
     }
     
 
@@ -59,7 +59,7 @@ class Game {
                 }
         }))
 
-        this.INKERS.forEach(i=> {
+        this.inkers.forEach(i=> {
             i.grow()
         })
 

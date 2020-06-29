@@ -16,6 +16,9 @@ class Cell {
     /** @type {boolean} */
     shifted
 
+    /** @type {number} */
+    growing = 0.5
+
     constructor(x, y, shifted) {
         this.x = x;
         this.y = y;
@@ -30,6 +33,9 @@ class Inker {
     color
     /** @type {Map<number, Cell>} */
     cells = new Map();    
+
+    /** @type {Map<number, Cell>} */
+    growingCells = new Map();
 
     /** @type {Map<number, {x: number, y: number, neightborhood: number}>} */
     borderCells = new Map(); 
@@ -72,6 +78,10 @@ class Inker {
      * @param {Game} game
      */
     expandTo(x, y, game) {
+        if (this.growingCells.size > 5) {//FIX
+            return;
+        }
+
         let cells = Array.from(this.borderCells.values()).sort((c1, c2) => {
             if (c1.neightborhood === c2.neightborhood) {
                 const score1 = Math.abs(x - c1.x) + Math.abs(y - c1.y)
@@ -85,9 +95,25 @@ class Inker {
         const targetCells = getRandomElement(cells, 5);
         console.log(targetCells);
         for (const targetCell of targetCells) {
-            this.addCell(game.field[targetCell.y][targetCell.x])
+            const realCell = game.field[targetCell.y][targetCell.x];
+            this.addCell(realCell)
+            this.growingCells.set(this.getCellHash(realCell), realCell)
+            console.log(this.growingCells)
         }
 
+    }
+
+    grow() {
+        const growingCells = Array.from(this.growingCells.values)
+
+        for (let i = 0; i < growingCells.length; i++) {
+            const growingcell = growingCells[i];
+            growingcell.growing += 0.1;
+            if (growingcell.growing >= 1) {
+                this.growingCells.delete(this.getCellHash(growingcell));
+            }
+        }
+        
     }
 
     /**
@@ -250,12 +276,16 @@ class Game {
         this.field.forEach(r=> r.forEach(c=> {
                 if (c.owner !== undefined) {
                     if (c.shifted) {
-                        this.drawCircle(c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, c.owner.color)
+                        this.drawCircle(c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE, Math.floor(CELL_CIRCLE_SIZE * c.growing), c.owner.color)
                     } else {
-                        this.drawCircle(c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, c.owner.color)
+                        this.drawCircle(c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE, Math.floor(CELL_CIRCLE_SIZE * c.growing), c.owner.color)
                     }
                 }
         }))
+
+        this.INKERS.forEach(i=> {
+            i.grow()
+        })
 
 
         if (this.borderCells) {//REMOVE
@@ -434,7 +464,7 @@ document.addEventListener('mousedown', (e) => {
 setInterval(() => {
     const coordinateObject = GAME.mapToCellCoordinates(x, y);
     inker.expandTo(coordinateObject.x, coordinateObject.y, GAME)
-}, 500)
+}, 2000)
 
 // setInterval(() => {
 //     CONTROLLER.expand(inker)

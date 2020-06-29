@@ -17,6 +17,9 @@ class Cell {
     /** @type {boolean} */
     shifted
 
+    /** @type {number} */
+    growing = 0.5
+
     constructor(x, y, shifted) {
         this.x = x;
         this.y = y;

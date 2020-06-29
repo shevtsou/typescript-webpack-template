@@ -1,0 +1,35 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        // {
+        //     "type": "node",
+        //     "program": "${workspaceFolder}/node_modules/webpack-dev-server/bin/webpack-dev-server.js",
+        //     "request": "launch",
+        //     "name": "Launch Chrome against localhost",
+        //     // "sourceMapPathOverrides": {
+        //     //     "webpack:///./src/*.js": "${workspaceRoot}/src/*.js",
+        //     //     "webpack:///src/*.ts": "${workspaceRoot}/src/*.ts",
+        //     //     "webpack:///./node_modules/*": "${workspaceRoot}/node_modules/*"
+        //     // },
+        //     "sourceMaps": true
+        // },
+        {
+            // Using the chrome debugger to debug a Vue application
+            "type": "chrome",
+            "request": "launch",
+            "name": "Chrome launch",
+            // Set the URL to match the root URL of your application
+            "url":"http://localhost:8080/#/",
+            "webRoot": "${workspaceRoot}",
+            /** Configure source map paths using the instructions below */
+            "sourceMapPathOverrides": {
+                "webpack:///./src/*.js": "${workspaceRoot}/src/*.js",
+                "webpack:///src/*.ts": "${workspaceRoot}/src/*.ts",
+                "webpack:///./node_modules/*": "${workspaceRoot}/node_modules/*"
+            }
+        }
+    ]
+}

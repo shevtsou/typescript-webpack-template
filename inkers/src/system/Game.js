@@ -92,12 +92,16 @@ class Game {
         this.field.forEach(r=> r.forEach(c=> {
                 if (c.owner !== undefined) {
                     if (c.shifted) {
-                        this.drawCircle(c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, c.owner.color)
+                        this.drawCircle(c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE, Math.floor(CELL_CIRCLE_SIZE * c.growing), c.owner.color)
                     } else {
-                        this.drawCircle(c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, c.owner.color)
+                        this.drawCircle(c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE, Math.floor(CELL_CIRCLE_SIZE * c.growing), c.owner.color)
                     }
                 }
         }))
+
+        this.INKERS.forEach(i=> {
+            i.grow()
+        })
 
 
         if (this.borderCells) {//REMOVE

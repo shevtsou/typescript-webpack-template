@@ -23,4 +23,4 @@ document.addEventListener('mousedown', (e) => {
 setInterval(() => {
     const coordinateObject = game.mapToCellCoordinates(x, y);
     inker.expandTo(coordinateObject.x, coordinateObject.y)
-}, 2000)
+}, 3000)

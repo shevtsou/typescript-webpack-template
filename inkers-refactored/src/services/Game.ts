@@ -1,9 +1,10 @@
 import { Cell } from '../models/Cell'
 import { Inker } from '../models/Inker'
 import Point from '../models/Point';
+import { BorderCell } from '../models/BorderCell';
 
-const CELL_CIRCLE_SIZE = 30;
-const CELL_FREE_SIZE = CELL_CIRCLE_SIZE * 40/25;
+const CELL_CIRCLE_SIZE = 25;
+const CELL_FREE_SIZE = CELL_CIRCLE_SIZE * 4/3;
 
 class Game {
 
@@ -13,6 +14,7 @@ class Game {
 
     canvas: HTMLCanvasElement
     context: CanvasRenderingContext2D
+    borderCells: Array<BorderCell> = []
 
     constructor() {
         for (let y = 0; y < 30; y++) {
@@ -51,10 +53,12 @@ class Game {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
         this.field.forEach(r=> r.forEach(c=> {
                 if (c.owner !== undefined) {
-                    if (c.shifted) {
+                    if (c.shifted && false) {
                         this.drawCircle(c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE, Math.floor(CELL_CIRCLE_SIZE * c.growing), c.owner.color)
                     } else {
                         this.drawCircle(c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE, Math.floor(CELL_CIRCLE_SIZE * c.growing), c.owner.color)
+                        // this.context.fillText(`${c.x}+${c.y}`, c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE);
+
                     }
                 }
         }))
@@ -66,12 +70,12 @@ class Game {
 
         // if (this.borderCells) {//REMOVE
         //     this.borderCells.forEach(c => {
-        //         if (y % 2 === 0) {
+        //         if (c.y % 2 === 0 && false) {
         //             this.drawCircle(c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, "#f00")
-        //             this.context.fillText(c.neightborhood ? c.neightborhood : "-", c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE);
+        //             this.context.fillText(c.neighborhood ? c.neighborhood.toString() : "-", c.x * CELL_FREE_SIZE + CELL_FREE_SIZE / 2, c.y * CELL_FREE_SIZE);
         //         } else {
         //             this.drawCircle(c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE, CELL_CIRCLE_SIZE, "#f00")
-        //             this.context.fillText(c.neightborhood ? c.neightborhood : "-", c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE);
+        //             this.context.fillText(c.neighborhood ? c.neighborhood.toString() : "-", c.x * CELL_FREE_SIZE, c.y * CELL_FREE_SIZE);
         //         }
         //     })
         // }
@@ -83,7 +87,7 @@ class Game {
         this.context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
         this.context.fillStyle = color;
         this.context.fill();
-        // this.context.strokeStyle = color;
+        //         this.context.strokeStyle = color;
         // this.context.stroke();
     }
 

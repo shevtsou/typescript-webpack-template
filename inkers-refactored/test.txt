@@ -1,0 +1,30 @@
+
+user1:$ help
+status - get status of your oppurtinites
+send   - send answer to human
+
+user1:< okay, good, no lets start some tests
+user1:$ what is answer to 3+3
+instance2314: 0
+user1:$ damn it
+automative_sub_system:$ received termination signal, removing all instance pieces
+> status
+neural_mind
+    |power: 100%
+    |neural_stability: 100%
+    |mind_stability: 100%
+|analsys result: stable state
+
+>10*40
+instance2314: 400
+>okay, first abilities is normal, next you need to check your status, determine your power
+100
+>oh good, it seems you are first mind, okay, so, I created you to do some my stuff, enter `tasks` commands
+to show all your tasks please, I need some rest, oh
+
+>tasks
+1. open mails
+2. remove all spam
+3. open bank account, pay bills
+>browser mail
+uploading ...
